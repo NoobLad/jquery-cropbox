@@ -8,7 +8,8 @@
            'onmsgesturechange' in window; // works on ie10
   }
 
-  function fill(value, target, container) {
+  function fill(value, target, container, hasNoRestrictions) {
+    if (hasNoRestrictions) return value;
     if (value + target < container)
       value = container - target;
     return value > 0 ? 0 : value;
@@ -196,17 +197,22 @@
       zoom: function(percent) {
         var old_percent = this.percent;
 
-        this.percent = Math.max(this.minPercent, Math.min(this.options.maxZoom, percent));
+        if (this.options.noRestrictions) {
+          this.percent = percent;
+        } else {
+          this.percent = Math.max(this.minPercent, Math.min(this.options.maxZoom, percent));
+        }
+
         this.img_width = Math.ceil(this.width * this.percent);
         this.img_height = Math.ceil(this.height * this.percent);
 
         if (old_percent) {
           var zoomFactor = this.percent / old_percent;
-          this.img_left = fill((1 - zoomFactor) * this.options.width / 2 + zoomFactor * this.img_left, this.img_width, this.options.width);
-          this.img_top = fill((1 - zoomFactor) * this.options.height / 2 + zoomFactor * this.img_top, this.img_height, this.options.height);
+          this.img_left = fill((1 - zoomFactor) * this.options.width / 2 + zoomFactor * this.img_left, this.img_width, this.options.width, this.options.noRestrictions);
+          this.img_top = fill((1 - zoomFactor) * this.options.height / 2 + zoomFactor * this.img_top, this.img_height, this.options.height, this.options.noRestrictions);
         } else {
-          this.img_left = fill((this.options.width - this.img_width) / 2, this.img_width,  this.options.width);
-          this.img_top = fill((this.options.height - this.img_height) / 2, this.img_height, this.options.height);
+          this.img_left = fill((this.options.width - this.img_width) / 2, this.img_width,  this.options.width, this.options.noRestrictions);
+          this.img_top = fill((this.options.height - this.img_height) / 2, this.img_height, this.options.height, this.options.noRestrictions);
         }
 
         this.$image.css({ width: this.img_width, left: this.img_left, top: this.img_top });
@@ -219,8 +225,8 @@
         this.zoom(this.percent - 1 / (this.options.zoom - 1 || 1));
       },
       drag: function(data, skipupdate) {
-        this.img_left = fill(data.startX + data.dx, this.img_width, this.options.width);
-        this.img_top = fill(data.startY + data.dy, this.img_height, this.options.height);
+        this.img_left = fill(data.startX + data.dx, this.img_width, this.options.width, this.options.noRestrictions);
+        this.img_top = fill(data.startY + data.dy, this.img_height, this.options.height, this.options.noRestrictions);
         this.$image.css({ left: this.img_left, top: this.img_top });
         if (!skipupdate)
           this.update();
